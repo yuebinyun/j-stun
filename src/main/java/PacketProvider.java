@@ -31,7 +31,6 @@ class PacketProvider {
         return b;
     }
 
-
     // build a empty message
     static byte[] bindingRequest() {
 
@@ -47,7 +46,6 @@ class PacketProvider {
 
         // message id
         BigInteger bigInteger = new BigInteger(127, new Random());
-        Log.p("id : " + bigInteger.toByteArray().length);
         buffer.put(bigInteger.toByteArray());
         buffer.position(0);
 
@@ -63,26 +61,31 @@ class PacketProvider {
         MsgType type = MsgType.getTyeByString(hex);
 
         bytes = new byte[Len.MSG_LEN.len];
-        Log.p("message len: " + buffer.getShort());
+        int mesLen = buffer.getShort();
+//        Log.p("message len: " + mesLen);
 
         bytes = new byte[Len.MSG_ID.len];
         buffer.get(bytes);
-        Log.p("message id: " + Hex.encodeHexString(bytes));
+//        Log.p("message id: " + Hex.encodeHexString(bytes));
 
         while (buffer.remaining() > 0) {
 
-
-            Log.p("");
+//            Log.p("");
 
             bytes = new byte[Len.ATB_TYPE.len];
             buffer.get(bytes);
             hex = Hex.encodeHexString(bytes);
             AttributesType aType = AttributesType.getTyeByString(hex);
-            Log.p("attribute : " + aType.name());
+
+            if (aType != null) {
+//                Log.p("attribute : " + aType.name());
+            } else {
+//                Log.p("attribute : " + hex);
+            }
 
             bytes = new byte[Len.ATB_LEN.len];
             int len = buffer.getShort();
-            Log.p("attribute len " + len);
+//            Log.p("attribute len " + len);
 
             if (aType == AttributesType.MAPPED_ADDRESS
                     || aType == AttributesType.SOURCE_ADDRESS
@@ -90,22 +93,26 @@ class PacketProvider {
 
                 bytes = new byte[Len.FAMILY_LEN.len];
                 buffer.get(bytes);
-                Log.p("Family:" + Hex.encodeHexString(bytes));
+//                Log.p("Family:" + Hex.encodeHexString(bytes));
 
                 bytes = new byte[Len.PORT_LEN.len];
                 buffer.get(bytes);
-                Log.p("Port : 0x" + Hex.encodeHexString(bytes));
+                if (aType == AttributesType.MAPPED_ADDRESS)
+                    Log.p("Port : 0x" + Hex.encodeHexString(bytes));
 
                 bytes = new byte[len - Len.FAMILY_LEN.len - Len.PORT_LEN.len];
                 buffer.get(bytes);
                 InetAddress ip = InetAddress.getByAddress(bytes);
-                Log.p("IP : " + ip.toString());
+                if (aType == AttributesType.MAPPED_ADDRESS)
+                    Log.p("IP : " + ip.toString());
             } else if (aType == AttributesType.SERVER) {
                 bytes = new byte[len];
                 buffer.get(bytes);
-                Log.p("Server version : " + new String(bytes));
+//                Log.p("Server version : " + new String(bytes));
             } else {
-                break;
+                bytes = new byte[len];
+                buffer.get(bytes);
+//                Log.p("unknow attribute : " + new String(bytes));
             }
         }
     }

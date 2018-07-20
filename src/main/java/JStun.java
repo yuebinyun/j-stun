@@ -8,26 +8,42 @@ import java.nio.ByteBuffer;
 
 public class JStun {
 
+    static final String[] STUN_SERVERS = {
+            "stun.ekiga.net",
+            "stun.ideasip.com",
+            "stun.voiparound.com",
+            "stun.voipbuster.com",
+            "stun.voipstunt.com",
+            "stun.voxgratia.org"
+    };
+
     static String IP = "118.178.236.183";
     static int PORT = 3478;
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) {
 
-        DatagramSocket socket = new DatagramSocket(54320);
-        socket.setSoTimeout(3000);
+        for (String server : STUN_SERVERS) {
+            try {
+                DatagramSocket socket = new DatagramSocket(0);
+                socket.setSoTimeout(3000);
 
-        InetAddress address = InetAddress.getByName(IP);
-        byte[] bind = PacketProvider.bindingRequest();
+                InetAddress address = InetAddress.getByName(server);
+                byte[] bind = PacketProvider.bindingRequest();
 
-        Bytes2Hex.p(bind);
+                DatagramPacket request = new DatagramPacket(bind, bind.length, address, PORT);
+                DatagramPacket response = new DatagramPacket(new byte[1024], 1024);
+                socket.send(request);
+                socket.receive(response);
 
-        DatagramPacket request = new DatagramPacket(bind, bind.length, address, PORT);
-        DatagramPacket response = new DatagramPacket(new byte[1024], 1024);
-        socket.send(request);
-        socket.receive(response);
+                ByteBuffer buffer = ByteBuffer.wrap(response.getData(), 0, response.getLength());
+                buffer.position(0);
+                PacketProvider.parse(buffer);
 
-        ByteBuffer buffer = ByteBuffer.wrap(response.getData(), 0, response.getLength());
-        buffer.position(0);
-        PacketProvider.parse(buffer);
+            } catch (IOException e) {
+                Log.p(e.toString());
+            }
+
+
+        }
     }
 }

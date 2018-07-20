@@ -11,6 +11,7 @@ public enum AttributesType {
     ERROR_CODE("0009"),
     UNKNOWN_ATTRIBUTES("000a"),
     REFLECTED_FROM("000b"),
+    XOR_MAPPED_ADDRESS("8020"),
     SERVER("8022");
 
     String hex;
