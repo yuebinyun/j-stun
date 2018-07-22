@@ -34,6 +34,7 @@ public class JStun {
                 DatagramSocket socket = new DatagramSocket(0);
                 socket.setSoTimeout(3000);
 
+                logger.trace("Test server : " + server);
                 InetAddress address = InetAddress.getByName(server);
                 byte[] bind = PacketProvider.bindingRequest();
 
@@ -47,7 +48,7 @@ public class JStun {
                 PacketProvider.parse(buffer);
 
             } catch (IOException e) {
-                logger.trace(e);
+                logger.debug(e);
             }
         }
     }

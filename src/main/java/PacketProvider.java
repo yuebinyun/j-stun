@@ -102,13 +102,15 @@ class PacketProvider {
                 bytes = new byte[Len.PORT_LEN.len];
                 buffer.get(bytes);
                 if (aType == AttributesType.MAPPED_ADDRESS)
-                    logger.trace("Port : 0x" + Hex.encodeHexString(bytes));
+                    logger.trace("MAPPED_ADDRESS Port : 0x" + Hex.encodeHexString(bytes));
 
                 bytes = new byte[len - Len.FAMILY_LEN.len - Len.PORT_LEN.len];
                 buffer.get(bytes);
                 InetAddress ip = InetAddress.getByAddress(bytes);
                 if (aType == AttributesType.MAPPED_ADDRESS)
-                    logger.trace("IP : " + ip.toString());
+                    logger.trace("MAPPED_ADDRESS IP : " + ip.toString() + "\n");
+
+
             } else if (aType == AttributesType.SERVER) {
                 bytes = new byte[len];
                 buffer.get(bytes);
