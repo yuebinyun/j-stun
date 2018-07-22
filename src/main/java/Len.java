@@ -1,3 +1,5 @@
+import javax.swing.event.ChangeEvent;
+
 /**
  * -0                   1                   2                   3
  * -0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1 2 3 4 5 6 7 8 9 0 1
@@ -25,8 +27,10 @@ public enum Len {
 
     FAMILY_LEN(2),
     PORT_LEN(2),
-    IP4_LEN(4);
+    IP4_LEN(4),
 
+
+    CHANGE_LEN(4);
 
     int len;
 

@@ -39,11 +39,10 @@ class PacketProvider {
     static byte[] bindingRequest() {
 
         ByteBuffer buffer = ByteBuffer.allocate(20);
-        buffer.clear();
-        buffer.position(0);
 
         // message type
         buffer.put(hexStringToByte(MsgType.Binding_Request.hex));
+
 
         // message len = 0
         buffer.put(new byte[]{0, 0});
@@ -53,6 +52,33 @@ class PacketProvider {
         buffer.put(bigInteger.toByteArray());
         buffer.position(0);
 
+        return buffer.array();
+    }
+
+    static byte[] bindingChangeRequest() {
+
+        int len = 20 + Len.ATB_TYPE.len + Len.ATB_LEN.len + Len.CHANGE_LEN.len;
+
+        ByteBuffer buffer = ByteBuffer.allocate(len);
+
+        // message type
+        buffer.put(hexStringToByte(MsgType.Binding_Request.hex));
+
+        // message len = 0
+        buffer.put(new byte[]{0, 8});
+
+        // message id
+        BigInteger bigInteger = new BigInteger(127, new Random());
+        buffer.put(bigInteger.toByteArray());
+
+
+        buffer.position(20);
+
+        buffer.put(new byte[]{0, 3, 0, 4, 0, 0, 0, 6});
+
+        logger.trace("postion : " + buffer.position());
+
+        buffer.position(0);
         return buffer.array();
     }
 

@@ -1,3 +1,5 @@
+import org.apache.calcite.util.BitString;
+import org.apache.commons.codec.binary.Hex;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -6,7 +8,6 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
-
 
 public class JStun {
 
@@ -31,12 +32,13 @@ public class JStun {
 
         for (String server : STUN_SERVERS) {
             try {
-                DatagramSocket socket = new DatagramSocket(0);
+                DatagramSocket socket = new DatagramSocket(3456);
                 socket.setSoTimeout(3000);
 
                 logger.trace("Test server : " + server);
                 InetAddress address = InetAddress.getByName(server);
-                byte[] bind = PacketProvider.bindingRequest();
+//                byte[] bind = PacketProvider.bindingRequest();
+                byte[] bind = PacketProvider.bindingChangeRequest();
 
                 DatagramPacket request = new DatagramPacket(bind, bind.length, address, PORT);
                 DatagramPacket response = new DatagramPacket(new byte[1024], 1024);
@@ -47,8 +49,10 @@ public class JStun {
                 buffer.position(0);
                 PacketProvider.parse(buffer);
 
+                System.exit(1);
             } catch (IOException e) {
                 logger.debug(e);
+                System.exit(0);
             }
         }
     }
