@@ -1,4 +1,6 @@
 import org.apache.commons.codec.binary.Hex;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.math.BigInteger;
 import java.net.InetAddress;
@@ -8,6 +10,8 @@ import java.util.Random;
 
 @SuppressWarnings("all")
 class PacketProvider {
+
+    private static final Logger logger = LogManager.getLogger(PacketProvider.class);
 
     /**
      * 把16进制字符串转换成字节数组
@@ -98,13 +102,13 @@ class PacketProvider {
                 bytes = new byte[Len.PORT_LEN.len];
                 buffer.get(bytes);
                 if (aType == AttributesType.MAPPED_ADDRESS)
-                    Log.p("Port : 0x" + Hex.encodeHexString(bytes));
+                    logger.trace("Port : 0x" + Hex.encodeHexString(bytes));
 
                 bytes = new byte[len - Len.FAMILY_LEN.len - Len.PORT_LEN.len];
                 buffer.get(bytes);
                 InetAddress ip = InetAddress.getByAddress(bytes);
                 if (aType == AttributesType.MAPPED_ADDRESS)
-                    Log.p("IP : " + ip.toString());
+                    logger.trace("IP : " + ip.toString());
             } else if (aType == AttributesType.SERVER) {
                 bytes = new byte[len];
                 buffer.get(bytes);

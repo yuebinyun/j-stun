@@ -15,14 +15,18 @@
  */
 
 public enum Len {
-    MSG_TYPE(2),
-    MSG_LEN(2),
+
+    MSG_TYPE(2), MSG_LEN(2),
+
     MSG_ID(16),
-    ATB_TYPE(2),
-    ATB_LEN(2),
+
+    ATB_TYPE(2), ATB_LEN(2),
+
+
     FAMILY_LEN(2),
     PORT_LEN(2),
     IP4_LEN(4);
+
 
     int len;
 

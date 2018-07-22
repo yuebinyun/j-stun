@@ -1,3 +1,5 @@
+import com.sun.istack.internal.Nullable;
+
 public enum AttributesType {
 
     MAPPED_ADDRESS("0001"),
@@ -20,6 +22,7 @@ public enum AttributesType {
         this.hex = hex;
     }
 
+    @Nullable
     public static AttributesType getTyeByString(String hex) {
         for (AttributesType e : AttributesType.values()) {
             if (e.hex.equals(hex)) return e;

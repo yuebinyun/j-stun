@@ -1,4 +1,5 @@
-import org.apache.commons.codec.binary.Hex;
+import org.apache.log4j.LogManager;
+import org.apache.log4j.Logger;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -6,19 +7,25 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.nio.ByteBuffer;
 
+
 public class JStun {
 
-    static final String[] STUN_SERVERS = {
+
+    // Define a static logger variable so that it references the
+    // Logger instance named "JStun".
+    private static final Logger logger = LogManager.getLogger(JStun.class);
+
+    private static final String[] STUN_SERVERS = {
             "stun.ekiga.net",
             "stun.ideasip.com",
             "stun.voiparound.com",
             "stun.voipbuster.com",
             "stun.voipstunt.com",
-            "stun.voxgratia.org"
+            "stun.voxgratia.org",
+            "118.178.236.183"
     };
 
-    static String IP = "118.178.236.183";
-    static int PORT = 3478;
+    private static int PORT = 3478;
 
     public static void main(String[] args) {
 
@@ -40,10 +47,8 @@ public class JStun {
                 PacketProvider.parse(buffer);
 
             } catch (IOException e) {
-                Log.p(e.toString());
+                logger.trace(e);
             }
-
-
         }
     }
 }

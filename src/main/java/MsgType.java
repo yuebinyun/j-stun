@@ -6,7 +6,7 @@ public enum MsgType {
     Binding_Error_Response("0111");
     String hex;
 
-    private MsgType(String hex) {
+    MsgType(String hex) {
         this.hex = hex;
     }
 
