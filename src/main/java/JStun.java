@@ -1,59 +1,168 @@
-import org.apache.calcite.util.BitString;
-import org.apache.commons.codec.binary.Hex;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.net.DatagramPacket;
-import java.net.DatagramSocket;
-import java.net.InetAddress;
+import java.net.*;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 
 public class JStun {
 
-
-    // Define a static logger variable so that it references the
-    // Logger instance named "JStun".
     private static final Logger logger = LogManager.getLogger(JStun.class);
+    private static DatagramSocket socket;
 
     private static final String[] STUN_SERVERS = {
             "stun.ekiga.net",
-            "stun.ideasip.com",
             "stun.voiparound.com",
-            "stun.voipbuster.com",
-            "stun.voipstunt.com",
-            "stun.voxgratia.org",
-            "118.178.236.183"
     };
 
-    private static int PORT = 3478;
+    @SuppressWarnings("unused")
+    private static void iterateUsingEntrySet(Map<String, Address> map) {
+        for (Map.Entry<String, Address> entry : map.entrySet()) {
+            logger.debug("[" + entry.getKey() + "] :" + entry.getValue());
+        }
+    }
+
+    @NotNull
+    private String getLocalIp() {
+        String localIP = "";
+        try (final DatagramSocket socket = new DatagramSocket()) {
+            socket.connect(InetAddress.getByName("baidu.com"), 10002);
+            localIP = socket.getLocalAddress().getHostAddress();
+            socket.disconnect();
+        } catch (Exception e) {
+            logger.error("[获取本地联网 ip 地址失败]" + e.getMessage());
+        }
+        return localIP;
+    }
 
     public static void main(String[] args) {
 
-        for (String server : STUN_SERVERS) {
-            try {
-                DatagramSocket socket = new DatagramSocket(3456);
-                socket.setSoTimeout(3000);
+        JStun jStun = new JStun();
+        String localIp = jStun.getLocalIp();
+        if (localIp.equals("")) {
+            System.exit(1);
+        } else {
+            logger.trace("Local IP = " + localIp);
+        }
 
-                logger.trace("Test server : " + server);
-                InetAddress address = InetAddress.getByName(server);
-//                byte[] bind = PacketProvider.bindingRequest();
-                byte[] bind = PacketProvider.bindingChangeRequest();
+        try {
 
-                DatagramPacket request = new DatagramPacket(bind, bind.length, address, PORT);
-                DatagramPacket response = new DatagramPacket(new byte[1024], 1024);
-                socket.send(request);
-                socket.receive(response);
+            String externalIp = "";
 
-                ByteBuffer buffer = ByteBuffer.wrap(response.getData(), 0, response.getLength());
-                buffer.position(0);
-                PacketProvider.parse(buffer);
+            socket = new DatagramSocket(0);
+            socket.setSoTimeout(5000);
 
-                System.exit(1);
-            } catch (IOException e) {
-                logger.debug(e);
-                System.exit(0);
+            Map<String, Address> map1 = jStun.test(STUN_SERVERS[0], false, false);
+            if (map1 == null) {
+
+                System.exit(-1);
+
+            } else if (map1.isEmpty()) {
+
+                logger.warn("[UDP blocked]");
+                return;
+
+            } else {
+                externalIp = map1.get(AttributesType.MAPPED_ADDRESS.name()).ip;
+
+                logger.warn("[External IP detected: " + externalIp + "]");
+
+                if (externalIp.equals(localIp)) {
+                    logger.warn("[No NAT: Check for firewall]");
+                } else {
+                    logger.warn("[NAT detected: Remember external IP]");
+                }
             }
+
+            Map<String, Address> map2 = jStun.test(STUN_SERVERS[0], true, true);
+            if (map2 == null) {
+                System.exit(-1);
+            }
+
+
+            if (externalIp.equals(localIp)) {
+
+                if (map2.isEmpty()) {
+                    logger.warn("[Symmetric Firewall]");
+                    return;
+                } else {
+                    logger.warn("[Open Internet]");
+                    return;
+                }
+
+            } else {
+
+                if (map2.isEmpty()) {
+                    logger.warn("[Do more test...]");
+                } else {
+                    logger.warn("[Full-cone NAT]");
+                    return;
+                }
+            }
+
+            Map<String, Address> map3 = jStun.test(STUN_SERVERS[1], false, false);
+            if (map3 == null) {
+                System.exit(-1);
+            }
+
+            String externalIP2 = map3.get(AttributesType.MAPPED_ADDRESS.name()).ip;
+            if (!externalIp.equals(externalIP2)) {
+                logger.warn("[Symmetric NAT]");
+                return;
+            }
+
+            Map<String, Address> map4 = jStun.test(STUN_SERVERS[1], false, true);
+            if (map4 == null) {
+                System.exit(-1);
+            }
+
+            if (map4.isEmpty()) {
+                logger.warn("Restricted port NAT");
+            } else {
+                logger.warn("Restricted cone NAT");
+            }
+
+        } catch (SocketException e) {
+            logger.trace("[建立 socket 失败.... 无法检测网络类型]--> " + e.getMessage());
+            System.exit(-1);
         }
     }
+
+
+    @Nullable
+    private Map<String, Address> test(String stunServer, boolean changeIP, boolean changePort) {
+
+        logger.trace("[Bing test server : " + stunServer
+                + " <chang ip ? " + changeIP
+                + "> <change port ? " + changePort + ">]");
+
+        try {
+            InetAddress address = InetAddress.getByName(stunServer);
+
+            byte[] bind;
+            if (changeIP || changePort) {
+                bind = PacketProvider.bindingChangeRequest(changeIP);
+            } else {
+                bind = PacketProvider.bindingRequest();
+            }
+
+            DatagramPacket request = new DatagramPacket(bind, bind.length, address, 3478);
+            DatagramPacket response = new DatagramPacket(new byte[1024], 1024);
+            socket.send(request);
+            socket.receive(response);
+            ByteBuffer buffer = ByteBuffer.wrap(response.getData(), 0, response.getLength());
+            logger.debug("[Receive form " + stunServer + "]");
+            return PacketProvider.parse(buffer);
+        } catch (SocketTimeoutException e) {
+            logger.error("[" + e.getMessage() + "]");
+            return new HashMap<>(0);
+        } catch (Exception e) {
+            logger.error("[程序异常，无法检测 NAT 类型]" + e.getMessage());
+            return null;
+        }
+    }
+
 }

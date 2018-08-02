@@ -1,4 +1,3 @@
-import com.sun.istack.internal.Nullable;
 
 public enum AttributesType {
 
@@ -22,7 +21,6 @@ public enum AttributesType {
         this.hex = hex;
     }
 
-    @Nullable
     public static AttributesType getTyeByString(String hex) {
         for (AttributesType e : AttributesType.values()) {
             if (e.hex.equals(hex)) return e;

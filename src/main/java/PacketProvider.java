@@ -1,4 +1,5 @@
 import org.apache.commons.codec.binary.Hex;
+import org.apache.commons.lang.ArrayUtils;
 import org.apache.log4j.LogManager;
 import org.apache.log4j.Logger;
 
@@ -6,6 +7,8 @@ import java.math.BigInteger;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.nio.ByteBuffer;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Random;
 
 @SuppressWarnings("all")
@@ -43,7 +46,6 @@ class PacketProvider {
         // message type
         buffer.put(hexStringToByte(MsgType.Binding_Request.hex));
 
-
         // message len = 0
         buffer.put(new byte[]{0, 0});
 
@@ -55,35 +57,36 @@ class PacketProvider {
         return buffer.array();
     }
 
-    static byte[] bindingChangeRequest() {
-
-        int len = 20 + Len.ATB_TYPE.len + Len.ATB_LEN.len + Len.CHANGE_LEN.len;
-
+    static byte[] bindingChangeRequest(boolean changeIp) {
+        int len_head = Len.MSG_TYPE.len + Len.MSG_LEN.len       // 2 + 2
+                + Len.MSG_ID.len;                               // 16
+        int len_attribute = Len.ATB_TYPE.len + Len.ATB_LEN.len  // 2 + 2
+                + Len.CHANGE_LEN.len;                           // 4
+        int len = len_head + len_attribute;
         ByteBuffer buffer = ByteBuffer.allocate(len);
-
+        ArrayUtils.addAll(new byte[2], new byte[2]);
         // message type
         buffer.put(hexStringToByte(MsgType.Binding_Request.hex));
-
         // message len = 0
-        buffer.put(new byte[]{0, 8});
-
+        buffer.put(new byte[]{0, (byte) len_attribute});
         // message id
         BigInteger bigInteger = new BigInteger(127, new Random());
         buffer.put(bigInteger.toByteArray());
-
-
         buffer.position(20);
-
-        buffer.put(new byte[]{0, 3, 0, 4, 0, 0, 0, 6});
-
-        logger.trace("postion : " + buffer.position());
+        if (changeIp) {
+            buffer.put(new byte[]{0, 3, 0, 4, 0, 0, 0, 6});
+        } else {
+            buffer.put(new byte[]{0, 3, 0, 4, 0, 0, 0, 2});
+        }
 
         buffer.position(0);
         return buffer.array();
     }
 
 
-    static void parse(ByteBuffer buffer) throws UnknownHostException {
+    static Map<String, Address> parse(ByteBuffer buffer) throws UnknownHostException {
+
+        Map<String, Address> map = new HashMap<>();
 
         byte[] bytes = new byte[Len.MSG_TYPE.len];
         buffer.get(bytes);
@@ -121,21 +124,23 @@ class PacketProvider {
                     || aType == AttributesType.SOURCE_ADDRESS
                     || aType == AttributesType.CHANGED_ADDRESS) {
 
+                Address address = new Address();
+
                 bytes = new byte[Len.FAMILY_LEN.len];
                 buffer.get(bytes);
 //                Log.p("Family:" + Hex.encodeHexString(bytes));
 
                 bytes = new byte[Len.PORT_LEN.len];
                 buffer.get(bytes);
-                if (aType == AttributesType.MAPPED_ADDRESS)
-                    logger.trace("MAPPED_ADDRESS Port : 0x" + Hex.encodeHexString(bytes));
+                address.port = Integer.parseInt(Hex.encodeHexString(bytes), 16);
+
 
                 bytes = new byte[len - Len.FAMILY_LEN.len - Len.PORT_LEN.len];
                 buffer.get(bytes);
                 InetAddress ip = InetAddress.getByAddress(bytes);
-                if (aType == AttributesType.MAPPED_ADDRESS)
-                    logger.trace("MAPPED_ADDRESS IP : " + ip.toString() + "\n");
+                address.ip = ip.toString().replace("/", "");
 
+                map.put(aType.name(), address);
 
             } else if (aType == AttributesType.SERVER) {
                 bytes = new byte[len];
@@ -147,5 +152,7 @@ class PacketProvider {
 //                Log.p("unknow attribute : " + new String(bytes));
             }
         }
+
+        return map;
     }
 }
