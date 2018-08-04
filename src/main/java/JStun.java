@@ -125,6 +125,7 @@ public class JStun {
                 logger.warn("Restricted cone NAT");
             }
 
+
         } catch (SocketException e) {
             logger.trace("[建立 socket 失败.... 无法检测网络类型]--> " + e.getMessage());
             System.exit(-1);
@@ -163,6 +164,9 @@ public class JStun {
             logger.error("[程序异常，无法检测 NAT 类型]" + e.getMessage());
             return null;
         }
+
+
     }
+
 
 }
